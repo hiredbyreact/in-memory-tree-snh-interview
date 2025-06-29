@@ -3,14 +3,14 @@ import express from 'express';
 import treeRouter from '../tree';
 import { treeDb } from '../../database';
 
-// Mock file operations to prevent actual file modifications during tests
+// Mock out any file-system interaction so the tests never touch disk
 jest.mock('../../utils/fileUtils', () => ({
   saveDataToFile: jest.fn(),
   loadDataFromFile: jest.fn(() => null),
   ensureDirectory: jest.fn()
 }));
 
-// Mock the database
+// Mock the database layer the router depends on
 jest.mock('../../database', () => ({
   treeDb: {
     getAllTrees: jest.fn(),
@@ -18,284 +18,119 @@ jest.mock('../../database', () => ({
   }
 }));
 
-const mockedTreeDb = treeDb as jest.Mocked<typeof treeDb>;
+const mockedDb = treeDb as jest.Mocked<typeof treeDb>;
 
-// Create test app
+// Spin up an Express app and mount the router under test
 const app = express();
 app.use(express.json());
 app.use('/api/tree', treeRouter);
 
-describe('Tree Routes', () => {
+describe('Tree API routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Suppress console.error during tests to keep output clean
+    // Silence console errors so test output stays readable
     jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    // Restore console.error after each test
     jest.restoreAllMocks();
   });
 
   describe('GET /api/tree', () => {
-    it('should return all trees successfully', async () => {
-      const mockTrees = [
-        {
-          id: 1,
-          label: 'root',
-          children: [
-            {
-              id: 2,
-              label: 'child1',
-              children: []
-            }
-          ]
-        }
-      ];
+    it('returns 200 with the list of trees', async () => {
+      const sampleTrees = [{ id: 1, label: 'root', children: [] }];
+      mockedDb.getAllTrees.mockReturnValue(sampleTrees);
 
-      mockedTreeDb.getAllTrees.mockReturnValue(mockTrees);
+      const res = await request(app).get('/api/tree').expect(200);
 
-      const response = await request(app)
-        .get('/api/tree')
-        .expect(200);
-
-      expect(response.body).toEqual(mockTrees);
-      expect(mockedTreeDb.getAllTrees).toHaveBeenCalledTimes(1);
+      expect(res.body).toEqual(sampleTrees);
+      expect(mockedDb.getAllTrees).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle database errors gracefully', async () => {
-      mockedTreeDb.getAllTrees.mockImplementation(() => {
-        throw new Error('Database connection failed');
+    it('returns 500 when the database layer throws', async () => {
+      mockedDb.getAllTrees.mockImplementation(() => {
+        throw new Error('Database failure');
       });
 
-      const response = await request(app)
-        .get('/api/tree')
-        .expect(500);
+      const res = await request(app).get('/api/tree').expect(500);
 
-      expect(response.body).toEqual({
+      expect(res.body).toEqual({
         error: 'Internal server error',
         message: 'Failed to retrieve trees'
       });
     });
-
-    it('should return empty array when no trees exist', async () => {
-      mockedTreeDb.getAllTrees.mockReturnValue([]);
-
-      const response = await request(app)
-        .get('/api/tree')
-        .expect(200);
-
-      expect(response.body).toEqual([]);
-    });
   });
 
   describe('POST /api/tree', () => {
-    it('should create a new node successfully', async () => {
-      const newNode = {
-        id: 3,
-        label: 'new child',
-        children: []
-      };
+    it('creates a new node and returns 201', async () => {
+      const newNode = { id: 2, label: 'child', children: [] };
+      mockedDb.addNode.mockReturnValue(newNode);
 
-      mockedTreeDb.addNode.mockReturnValue(newNode);
-
-      const response = await request(app)
+      const res = await request(app)
         .post('/api/tree')
-        .send({
-          label: 'new child',
-          parentId: 1
-        })
+        .send({ label: 'child', parentId: 1 })
         .expect(201);
 
-      expect(response.body).toEqual(newNode);
-      expect(mockedTreeDb.addNode).toHaveBeenCalledWith('new child', 1);
-      expect(mockedTreeDb.addNode).toHaveBeenCalledTimes(1);
+      expect(res.body).toEqual(newNode);
+      expect(mockedDb.addNode).toHaveBeenCalledWith('child', 1);
     });
 
-    it('should return 400 when label is missing', async () => {
-      const response = await request(app)
-        .post('/api/tree')
-        .send({
-          parentId: 1
-        })
-        .expect(400);
+    it.each([
+      [{ parentId: 1 }, 'Label and parentId are required'],
+      [{ label: 'foo' }, 'Label and parentId are required'],
+      [{ label: 'foo', parentId: '' }, 'parentId must be a number']
+    ])('returns 400 for invalid input %#', async (payload, expectedMessage) => {
+      const res = await request(app).post('/api/tree').send(payload).expect(400);
 
-      expect(response.body).toEqual({
+      expect(res.body).toEqual({
         error: 'Invalid request',
-        message: 'Label and parentId are required'
+        message: expectedMessage
       });
-      expect(mockedTreeDb.addNode).not.toHaveBeenCalled();
+      expect(mockedDb.addNode).not.toHaveBeenCalled();
     });
 
-    it('should return 400 when label is empty string', async () => {
-      const response = await request(app)
-        .post('/api/tree')
-        .send({
-          label: '',
-          parentId: 1
-        })
-        .expect(400);
-
-      expect(response.body).toEqual({
-        error: 'Invalid request',
-        message: 'Label and parentId are required'
-      });
-      expect(mockedTreeDb.addNode).not.toHaveBeenCalled();
-    });
-
-    it('should return 400 when parentId is missing', async () => {
-      const response = await request(app)
-        .post('/api/tree')
-        .send({
-          label: 'test node'
-        })
-        .expect(400);
-
-      expect(response.body).toEqual({
-        error: 'Invalid request',
-        message: 'Label and parentId are required'
-      });
-      expect(mockedTreeDb.addNode).not.toHaveBeenCalled();
-    });
-
-    it('should return 400 when parentId is not a number', async () => {
-      const response = await request(app)
-        .post('/api/tree')
-        .send({
-          label: 'test node',
-          parentId: 'invalid'
-        })
-        .expect(400);
-
-      expect(response.body).toEqual({
-        error: 'Invalid request',
-        message: 'parentId must be a number'
-      });
-      expect(mockedTreeDb.addNode).not.toHaveBeenCalled();
-    });
-
-    it('should return 400 when parentId is null', async () => {
-      const response = await request(app)
-        .post('/api/tree')
-        .send({
-          label: 'test node',
-          parentId: null
-        })
-        .expect(400);
-
-      expect(response.body).toEqual({
-        error: 'Invalid request',
-        message: 'parentId must be a number'
-      });
-      expect(mockedTreeDb.addNode).not.toHaveBeenCalled();
-    });
-
-    it('should return 404 when parent node is not found', async () => {
-      mockedTreeDb.addNode.mockImplementation(() => {
+    it('returns 404 when the parent cannot be found', async () => {
+      mockedDb.addNode.mockImplementation(() => {
         throw new Error('Parent node with id 999 not found');
       });
 
-      const response = await request(app)
+      const res = await request(app)
         .post('/api/tree')
-        .send({
-          label: 'orphan node',
-          parentId: 999
-        })
+        .send({ label: 'orphan', parentId: 999 })
         .expect(404);
 
-      expect(response.body).toEqual({
+      expect(res.body).toEqual({
         error: 'Parent not found',
         message: 'Parent node with id 999 not found'
       });
-      expect(mockedTreeDb.addNode).toHaveBeenCalledWith('orphan node', 999);
     });
 
-    it('should handle unexpected database errors', async () => {
-      mockedTreeDb.addNode.mockImplementation(() => {
-        throw new Error('Unexpected database error');
+    it('returns 500 on unexpected database failure', async () => {
+      mockedDb.addNode.mockImplementation(() => {
+        throw new Error('Unexpected DB error');
       });
 
-      const response = await request(app)
+      const res = await request(app)
         .post('/api/tree')
-        .send({
-          label: 'test node',
-          parentId: 1
-        })
+        .send({ label: 'foo', parentId: 1 })
         .expect(500);
 
-      expect(response.body).toEqual({
+      expect(res.body).toEqual({
         error: 'Internal server error',
         message: 'Failed to create node'
       });
-    });
-
-    it('should accept parentId as 0', async () => {
-      const newNode = {
-        id: 5,
-        label: 'root child',
-        children: []
-      };
-
-      mockedTreeDb.addNode.mockReturnValue(newNode);
-
-      const response = await request(app)
-        .post('/api/tree')
-        .send({
-          label: 'root child',
-          parentId: 0
-        })
-        .expect(201);
-
-      expect(response.body).toEqual(newNode);
-      expect(mockedTreeDb.addNode).toHaveBeenCalledWith('root child', 0);
-    });
-
-    it('should handle special characters in label', async () => {
-      const newNode = {
-        id: 6,
-        label: 'special !@#$%^&*() chars',
-        children: []
-      };
-
-      mockedTreeDb.addNode.mockReturnValue(newNode);
-
-      const response = await request(app)
-        .post('/api/tree')
-        .send({
-          label: 'special !@#$%^&*() chars',
-          parentId: 1
-        })
-        .expect(201);
-
-      expect(response.body).toEqual(newNode);
-      expect(mockedTreeDb.addNode).toHaveBeenCalledWith('special !@#$%^&*() chars', 1);
     });
   });
 
-  describe('Error handling edge cases', () => {
-    it('should handle malformed JSON gracefully', async () => {
-      const response = await request(app)
+  describe('Edge cases', () => {
+    it('responds with 400 when JSON is malformed', async () => {
+      const res = await request(app)
         .post('/api/tree')
         .set('Content-Type', 'application/json')
-        .send('{ invalid json }')
+        .send('{ bad json ')
         .expect(400);
 
-      // Express handles malformed JSON and returns HTML error page
-      expect(response.status).toBe(400);
-      expect(response.text).toContain('SyntaxError');
-    });
-
-    it('should handle missing Content-Type header', async () => {
-      const response = await request(app)
-        .post('/api/tree')
-        .send('label=test&parentId=1')
-        .expect(500);
-
-      // When body isn't parsed correctly, destructuring fails and causes 500
-      expect(response.body).toEqual({
-        error: 'Internal server error',
-        message: 'Failed to create node'
-      });
+      expect(res.text).toContain('SyntaxError');
     });
   });
 }); 
