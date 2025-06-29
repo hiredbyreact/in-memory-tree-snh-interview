@@ -1,4 +1,5 @@
 import express, { Express, Request, Response } from 'express';
+import treeRouter from './routes/tree';
 
 const app: Express = express();
 const port = process.env.PORT || 3000;
@@ -8,20 +9,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.get('/', (_req: Request, res: Response) => {
-  res.json({
-    message: 'Welcome to the Express TypeScript API!',
-    timestamp: new Date().toISOString(),
-  });
-});
-
-app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({
-    status: 'OK',
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-  });
-});
+app.use('/api/tree', treeRouter);
 
 // Error handling middleware
 app.use((req: Request, res: Response) => {
