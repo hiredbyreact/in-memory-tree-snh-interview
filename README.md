@@ -2,6 +2,24 @@
 
 A RESTful API server for managing hierarchical tree data structures with in-memory storage and file persistence.
 
+## 📑 Table of Contents
+- [Features](#-features)
+- [Requirements](#-requirements)
+- [Installation](#-installation)
+- [Running the Server](#-running-the-server)
+- [Current Implementation Status](#-current-implementation-status)
+- [API Documentation](#-api-documentation)
+- [Usage Examples](#-usage-examples)
+- [Testing](#-testing)
+- [Project Structure](#-project-structure)
+- [Data Structure](#-data-structure)
+- [Configuration](#-configuration)
+- [Available Scripts](#-available-scripts)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Troubleshooting](#-troubleshooting)
+- [Support](#-support)
+
 ## 🚀 Features
 
 - **Tree Management**: Create and retrieve hierarchical tree structures
