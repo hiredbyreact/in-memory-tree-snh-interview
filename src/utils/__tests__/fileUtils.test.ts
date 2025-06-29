@@ -1,5 +1,5 @@
 import path from "path";
-import { ensureDirectory, loadDataFromFile, saveDataToFile } from "../fileUtils";
+import { ensureDirectory, loadDataFromFile, saveDataToFile } from "../";
 import fs from "fs";
 
 describe('ensureDirectory', () => {
