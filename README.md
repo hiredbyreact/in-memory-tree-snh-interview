@@ -160,12 +160,15 @@ in-memory-tree-snh-interview/
 ├── src/
 │   ├── database/
 │   │   ├── index.ts              # Database exports
-│   │   └── tree.ts      # Tree database implementation
+│   │   └── tree.ts               # Tree database implementation
 │   ├── routes/
 │   │   └── tree.ts               # Tree API routes
 │   ├── types/
 │   │   ├── index.ts              # Type exports
 │   │   └── tree.ts               # Tree type definitions
+│   ├── utils/
+│   │   ├── index.ts              # Utility exports
+│   │   └── fileUtils.ts          # File operation utilities
 │   └── index.ts                  # Main server file
 ├── tests/
 │   └── tree.test.ts              # E2E API tests
