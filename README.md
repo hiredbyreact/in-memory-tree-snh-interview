@@ -160,7 +160,7 @@ in-memory-tree-snh-interview/
 ├── src/
 │   ├── database/
 │   │   ├── index.ts              # Database exports
-│   │   └── tree-database.ts      # Tree database implementation
+│   │   └── tree.ts      # Tree database implementation
 │   ├── routes/
 │   │   └── tree.ts               # Tree API routes
 │   ├── types/
@@ -168,7 +168,7 @@ in-memory-tree-snh-interview/
 │   │   └── tree.ts               # Tree type definitions
 │   └── index.ts                  # Main server file
 ├── tests/
-│   └── tree.test.ts              # API tests
+│   └── tree.test.ts              # E2E API tests
 ├── data/
 │   └── trees.json                # Persistent storage file
 ├── dist/                         # Compiled JavaScript output
