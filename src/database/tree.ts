@@ -10,7 +10,7 @@ export class TreeDatabase {
 
   constructor() {
     // Setup data file path
-    this.dataFilePath = path.join(process.cwd(), 'src', 'data', 'trees.json');
+    this.dataFilePath = path.join(process.cwd(), 'data', 'trees.json');
     this.loadData();
   }
 

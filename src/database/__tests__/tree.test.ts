@@ -1,5 +1,27 @@
 import { TreeDatabase } from "../";
 
+// Mock file operations to prevent actual file modifications during tests
+jest.mock('../../utils/fileUtils', () => ({
+  saveDataToFile: jest.fn(),
+  loadDataFromFile: jest.fn(() => ({
+    trees: [
+      {
+        id: 1,
+        label: 'root',
+        children: [
+          {
+            id: 2,
+            label: 'child1',
+            children: []
+          }
+        ]
+      }
+    ],
+    nextId: 3
+  })),
+  ensureDirectory: jest.fn()
+}));
+
 describe('tree', () => {
     it('should create a new tree', () => {
         const treeDb = new TreeDatabase();

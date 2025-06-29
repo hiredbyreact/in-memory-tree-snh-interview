@@ -3,6 +3,13 @@ import express from 'express';
 import treeRouter from '../tree';
 import { treeDb } from '../../database';
 
+// Mock file operations to prevent actual file modifications during tests
+jest.mock('../../utils/fileUtils', () => ({
+  saveDataToFile: jest.fn(),
+  loadDataFromFile: jest.fn(() => null),
+  ensureDirectory: jest.fn()
+}));
+
 // Mock the database
 jest.mock('../../database', () => ({
   treeDb: {
