@@ -1,0 +1,24 @@
+[
+    {
+        "id": 1,
+        "label": "root",
+        "children": [
+            {
+                "id": 3,
+                "label": "bear",
+                "children": [
+                    {
+                        "id": 4,
+                        "label": "cat",
+                        "children": []
+                    },
+                ]
+            },
+            {
+                "id": 7,
+                "label": "frog",
+                "children": []
+            }
+        ]
+    }
+]
