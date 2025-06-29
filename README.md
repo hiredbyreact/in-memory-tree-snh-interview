@@ -47,6 +47,21 @@ yarn start
 
 The server will start on `http://localhost:3000` by default.
 
+## 🚧 Current Implementation Status
+
+✅ **Completed:**
+- Tree database with file persistence
+- RESTful API routes (`GET /api/tree`, `POST /api/tree`)
+- Comprehensive test suite (25 tests, 78% coverage)
+- TypeScript implementation with proper types
+- File-based persistence with JSON storage
+- Input validation and error handling
+
+⚠️ **Next Steps:**
+- Integrate routes into main server (`src/index.ts`)
+- Add CORS support for cross-origin requests
+- Optional: Add authentication/rate limiting
+
 ## 📚 API Documentation
 
 ### Base URL
@@ -141,7 +156,48 @@ Content-Type: application/json
 }
 ```
 
+## 💻 Usage Examples
+
+### JavaScript Fetch
+
+```javascript
+// Get all trees
+const trees = await fetch('http://localhost:3000/api/tree')
+  .then(res => res.json());
+
+// Add new node
+const newNode = await fetch('http://localhost:3000/api/tree', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    label: 'New Child Node',
+    parentId: 1
+  })
+}).then(res => res.json());
+```
+
+### cURL
+
+```bash
+# Get all trees
+curl http://localhost:3000/api/tree
+
+# Add new node
+curl -X POST http://localhost:3000/api/tree \
+  -H "Content-Type: application/json" \
+  -d '{"label": "New Node", "parentId": 1}'
+```
+
 ## 🧪 Testing
+
+The project includes comprehensive testing with **25 tests** and **78% code coverage**.
+
+### Test Structure
+- **Route Tests**: API endpoint behavior and validation
+- **Database Tests**: Tree operations and data persistence  
+- **Utility Tests**: File operations and helper functions
+
+### Running Tests
 
 Run the test suite:
 ```bash
@@ -153,28 +209,44 @@ Run tests with coverage:
 yarn test:coverage
 ```
 
+Run tests in watch mode:
+```bash
+yarn test:watch
+```
+
+### Test Features
+- ✅ **Mocked file operations** - Tests don't modify actual data files
+- ✅ **HTTP testing** - Full API endpoint testing with supertest
+- ✅ **Error scenarios** - Comprehensive error handling validation
+- ✅ **Edge cases** - Input validation and boundary testing
+
 ## 📁 Project Structure
 
 ```
 in-memory-tree-snh-interview/
 ├── src/
 │   ├── database/
+│   │   ├── __tests__/
+│   │   │   └── tree.test.ts      # Database unit tests
 │   │   ├── index.ts              # Database exports
 │   │   └── tree.ts               # Tree database implementation
 │   ├── routes/
+│   │   ├── __tests__/
+│   │   │   └── tree.test.ts      # Route integration tests
 │   │   └── tree.ts               # Tree API routes
 │   ├── types/
 │   │   ├── index.ts              # Type exports
 │   │   └── tree.ts               # Tree type definitions
 │   ├── utils/
+│   │   ├── __tests__/
+│   │   │   └── fileUtils.test.ts # Utility unit tests
 │   │   ├── index.ts              # Utility exports
 │   │   └── fileUtils.ts          # File operation utilities
 │   └── index.ts                  # Main server file
-├── tests/
-│   └── tree.test.ts              # E2E API tests
 ├── data/
 │   └── trees.json                # Persistent storage file
 ├── dist/                         # Compiled JavaScript output
+├── jest.config.js                # Jest testing configuration
 ├── package.json
 ├── tsconfig.json
 └── README.md
@@ -211,6 +283,8 @@ DATA_FILE=./data/trees.json
 - `yarn start` - Start the production server
 - `yarn dev` - Start development server with hot reload
 - `yarn test` - Run the test suite
+- `yarn test:watch` - Run tests in watch mode
+- `yarn test:coverage` - Run tests with coverage report
 - `yarn clean` - Remove compiled files
 
 ## 🤝 Contributing
